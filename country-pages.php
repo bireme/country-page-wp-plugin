@@ -22,6 +22,7 @@ add_action('plugins_loaded', function () {
     load_plugin_textdomain('country-pages', false, dirname(plugin_basename(__FILE__)) . '/languages');
     if (is_admin()) {
         \CP\Admin\TemplatesPage::boot();
+        \CP\Admin\AcfMappingPage::boot();
     }
     
     (new CP\Plugin())->boot();

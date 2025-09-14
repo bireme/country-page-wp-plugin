@@ -1,0 +1,3 @@
+#Não subir os templates custom.
+/templates/custom-country.php
+/templates/custom-list.php

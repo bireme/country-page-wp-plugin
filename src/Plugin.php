@@ -1,9 +1,11 @@
 <?php
 namespace CP;
 
+use CP\Admin\AdminMenu;
 use CP\Admin\SettingsPage;
 use CP\Shortcodes\CountryCardShortcode;
 use CP\Shortcodes\CountryListShortcode;
+use CP\Shortcodes\BvsJournalsShortcode;
 
 final class Plugin {
     public function boot(): void {
@@ -12,11 +14,17 @@ final class Plugin {
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
 
         // Admin
-        (new SettingsPage())->register();
+        if (is_admin()) {
+            (new AdminMenu())->register();
+            (new SettingsPage())->register();
+            \CP\Admin\TemplatesPage::boot();
+            \CP\Admin\AcfMappingPage::boot();
+        }
 
         // Shortcodes 
         (new CountryCardShortcode())->register();
         (new CountryListShortcode())->register();
+        (new BvsJournalsShortcode())->register();
 
         // Custom CSS/JS do admin (config) — só imprime no front se houver e usuário tiver salvo
         add_action('wp_head', [$this, 'printCustomCSS']);

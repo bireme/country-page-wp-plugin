@@ -31,10 +31,6 @@ final class CountryCardShortcode {
 
         $country = Normalizer::country($raw);
 
-        /**
-         * Permite filtrar os dados antes do template.
-         * @param array $country
-         */
         $country = apply_filters('cp_country_data', $country);
 
         //Verificando se tem um template custom:

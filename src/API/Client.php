@@ -27,7 +27,7 @@ final class Client {
         $cacheKey = 'cp_country_' . md5($url);
 
         //TODO: será que vale a pena mesmo usar esse cache (vai me dar dor de cabeça...)
-        return Cache::remember($cacheKey, function () use ($url) {
+        $result = Cache::remember($cacheKey, function () use ($url) {
             $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => true]);
             if (is_wp_error($res)) return null;
             $code = wp_remote_retrieve_response_code($res);
@@ -36,6 +36,9 @@ final class Client {
             if (!is_array($body) || empty($body[0])) return null;
             return $body[0];
         });
+
+        // Ensure we return the correct type - array or null
+        return is_array($result) ? $result : null;
     }
 
     //Função de Listagem (pode mudar parametros em breve)

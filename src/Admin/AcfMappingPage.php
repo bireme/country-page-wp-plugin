@@ -13,9 +13,9 @@ class AcfMappingPage {
 
     public static function menu(): void {
         add_submenu_page(
-            'options-general.php',
-            'ACF Mapping',
-            'ACF Mapping',
+            'country-pages',
+            __('Mapeamento ACF', 'country-pages'),
+            __('Mapeamento ACF', 'country-pages'),
             self::CAPABILITY,
             'cp-acf-mapping',
             [self::class, 'render_page']
@@ -43,7 +43,7 @@ class AcfMappingPage {
         $mapping = get_option(self::OPTION_KEY, []);
         ?>
         <div class="wrap">
-          <h1>Mapeamento de ACF</h1>
+          <h1><?php esc_html_e('Mapeamento ACF', 'country-pages'); ?></h1>
           <form method="post">
             <?php wp_nonce_field('cp_acf_mapping'); ?>
             <table class="widefat">

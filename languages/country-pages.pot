@@ -1,7 +1,148 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Country Pages 1.0.0\n"
-"POT-Creation-Date: 2025-09-03 17:04:41+0000\n"
+"POT-Creation-Date: 2025-09-22 00:00:00+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+msgid "Country Pages"
+msgstr ""
+
+msgid "Configurações"
+msgstr ""
+
+msgid "Bem-vindo ao Country Pages"
+msgstr ""
+
+msgid "Este plugin permite consumir uma API externa de países e exibir os dados através de shortcodes personalizáveis."
+msgstr ""
+
+msgid "Páginas de Configuração:"
+msgstr ""
+
+msgid "Configure o endpoint da API e CSS/JS customizados"
+msgstr ""
+
+msgid "Templates"
+msgstr ""
+
+msgid "Personalize os templates de exibição dos países"
+msgstr ""
+
+msgid "Mapeamento ACF"
+msgstr ""
+
+msgid "Configure o mapeamento de campos ACF"
+msgstr ""
+
+msgid "Shortcodes Disponíveis:"
+msgstr ""
+
+msgid "Exibe um cartão de país específico"
+msgstr ""
+
+msgid "Exibe uma lista de países"
+msgstr ""
+
+msgid "Endpoint da API"
+msgstr ""
+
+msgid "CSS customizado"
+msgstr ""
+
+msgid "JS customizado"
+msgstr ""
+
+msgid "Como usar templates customizados"
+msgstr ""
+
+msgid "Para usar templates personalizados, você deve subir manualmente os arquivos na pasta correta do plugin:"
+msgstr ""
+
+msgid "Para países individuais:"
+msgstr ""
+
+msgid "Para lista de países:"
+msgstr ""
+
+msgid "Após subir os arquivos, ative o modo \"Custom\" nas opções abaixo."
+msgstr ""
+
+msgid "Template de País Individual"
+msgstr ""
+
+msgid "Template de Lista de Países"
+msgstr ""
+
+msgid "Padrão"
+msgstr ""
+
+msgid "Customizado"
+msgstr ""
+
+msgid "Arquivo:"
+msgstr ""
+
+msgid "Status:"
+msgstr ""
+
+msgid "Arquivo encontrado"
+msgstr ""
+
+msgid "Arquivo não encontrado"
+msgstr ""
+
+msgid "Salvar Configurações"
+msgstr ""
+
+msgid "Configurações de templates salvas com sucesso."
+msgstr ""
+
+msgid "Configure o modo de templates (padrão ou customizado)"
+msgstr ""
+
+msgid "Templates Customizados:"
+msgstr ""
+
+msgid "Para usar templates personalizados, suba os arquivos manualmente na pasta:"
+msgstr ""
+
+msgid "Template para países individuais"
+msgstr ""
+
+msgid "Template para lista de países"
+msgstr ""
+
+msgid "Após subir os arquivos, ative o modo \"Customizado\" na página Templates."
+msgstr ""
+
+msgid "Capital:"
+msgstr ""
+
+msgid "População:"
+msgstr ""
+
+msgid "Nenhum país encontrado."
+msgstr ""
+
+msgid "Sobre"
+msgstr ""
+
+msgid "Configure os endpoints das APIs, tokens de acesso e personalizações CSS/JS."
+msgstr ""
+
+msgid "URL API de Journals"
+msgstr ""
+
+msgid "URL da API para consulta de journals."
+msgstr ""
+
+msgid "BVSalud Token"
+msgstr ""
+
+msgid "Token de acesso"
+msgstr ""
+
+msgid "Token de autenticação para acesso à API BVSalud."
+msgstr ""

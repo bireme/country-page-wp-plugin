@@ -1,30 +1,27 @@
 <?php
 namespace CP\Admin;
 
+use CP\Support\Template;
+
 if (!defined('ABSPATH')) exit;
 
 class TemplatesPage {
-    const CAPABILITY    = 'manage_options';
-    const FILE_COUNTRY  = 'templates/custom-country.php';
-    const FILE_LIST     = 'templates/custom-list.php';
-
-
+    const CAPABILITY = 'manage_options';
     const OPT_MODE_COUNTRY = 'cp_template_mode_country'; // 'default' | 'custom'
     const OPT_MODE_LIST    = 'cp_template_mode_list';    // 'default' | 'custom'
-    const OPT_CODE_COUNTRY = 'cp_template_code_country';
-    const OPT_CODE_LIST    = 'cp_template_code_list';
+    const OPT_MODE_BVS     = 'cp_template_mode_bvs';     // 'default' | 'custom'
 
     public static function boot(): void {
         add_action('admin_menu', [self::class, 'menu']);
         add_action('admin_init', [self::class, 'register_settings']);
-        add_action('admin_enqueue_scripts', [self::class, 'enqueue_code_editor']);
+        add_action('admin_init', [self::class, 'cleanup_old_options'], 1);
     }
 
     public static function menu(): void {
         add_submenu_page(
-            'options-general.php',
-            'Country Templates',
-            'Country Templates',
+            'country-pages',
+            __('Templates', 'country-pages'),
+            __('Templates', 'country-pages'),
             self::CAPABILITY,
             'cp-country-templates',
             [self::class, 'render_page']
@@ -34,36 +31,38 @@ class TemplatesPage {
     public static function register_settings(): void {
         register_setting('cp_templates', self::OPT_MODE_COUNTRY);
         register_setting('cp_templates', self::OPT_MODE_LIST);
+        register_setting('cp_templates', self::OPT_MODE_BVS);
     }
 
-    public static function enqueue_code_editor($hook): void {
-        if ($hook !== 'settings_page_cp-country-templates') return;
-        $settings = wp_enqueue_code_editor(['type' => 'text/x-php']);
-        if ($settings) {
-            wp_add_inline_script('code-editor', 'window.cpCodeEditorSettings = ' . wp_json_encode($settings) . ';');
+    /**
+     * Remove opções antigas do sistema de templates baseado em código no banco
+     */
+    public static function cleanup_old_options(): void {
+        // Remove as opções antigas apenas uma vez
+        if (get_option('cp_templates_cleaned', false)) {
+            return;
         }
-        wp_enqueue_script('code-editor');
-        wp_enqueue_style('code-editor');
+
+        // Remove opções antigas do editor de código
+        delete_option('cp_template_code_country');
+        delete_option('cp_template_code_list');
+        
+        // Marca como limpo para não executar novamente
+        update_option('cp_templates_cleaned', true);
     }
 
-    private static function plugin_root(): string {
-        // este arquivo está em src/Admin/, sobe dois níveis para a raiz do plugin
-        return trailingslashit(dirname(__DIR__, 1)); 
-    }
-
-    private static function file_path(string $rel): string {
-        return trailingslashit(self::plugin_root()) . ltrim($rel, '/');
-    }
-
-    private static function read_file_or_opt(string $fileRel, string $optCode, callable $defaultStub): string {
-        $file = self::file_path($fileRel);
-        if (file_exists($file)) {
-            $code = file_get_contents($file);
-            if ($code !== false && $code !== '') return $code;
+    private static function get_custom_template_path(string $type): string {
+        $plugin_root = trailingslashit(dirname(__DIR__, 1));
+        if ($type === 'country') {
+            return $plugin_root . 'Templates/Custom/custom-country.php';
         }
-        $opt = get_option($optCode, '');
-        if ($opt !== '') return $opt;
-        return $defaultStub();
+        if ($type === 'list') {
+            return $plugin_root . 'Templates/Custom/custom-list.php';
+        }
+        if ($type === 'bvs') {
+            return $plugin_root . 'Templates/Custom/custom-bvs-journals.php';
+        }
+        return '';
     }
 
     public static function render_page(): void {
@@ -74,130 +73,125 @@ class TemplatesPage {
             self::handle_post();
         }
 
-        $countryCode = self::read_file_or_opt(self::FILE_COUNTRY, self::OPT_CODE_COUNTRY, [self::class, 'defaultCountryStub']);
-        $listCode    = self::read_file_or_opt(self::FILE_LIST,    self::OPT_CODE_LIST,    [self::class, 'defaultListStub']);
-
         $modeCountry = get_option(self::OPT_MODE_COUNTRY, 'default');
         $modeList    = get_option(self::OPT_MODE_LIST, 'default');
+        $modeBvs     = get_option(self::OPT_MODE_BVS, 'default');
+        
+        $countryTemplatePath = self::get_custom_template_path('country');
+        $listTemplatePath = self::get_custom_template_path('list');
+        $bvsTemplatePath = self::get_custom_template_path('bvs');
+        
+        $countryTemplateExists = file_exists($countryTemplatePath);
+        $listTemplateExists = file_exists($listTemplatePath);
+        $bvsTemplateExists = file_exists($bvsTemplatePath);
         ?>
         <div class="wrap">
-          <h1>Country Templates</h1>
-          <?php settings_errors('cp_templates'); ?>
-          <form method="post">
-            <?php settings_fields('cp_templates'); ?>
-            <?php wp_nonce_field('cp_templates_nonce', 'cp_templates_nonce_field'); ?>
+            <h1><?php esc_html_e('Templates', 'country-pages'); ?></h1>
+            <?php settings_errors('cp_templates'); ?>
+            
+            <div class="card">
+                <h2><?php esc_html_e('Como usar templates customizados', 'country-pages'); ?></h2>
+                <p><?php esc_html_e('Para usar templates personalizados, você deve subir manualmente os arquivos na pasta correta do plugin:', 'country-pages'); ?></p>
+                <ul>
+                    <li><strong><?php esc_html_e('Para países individuais:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code></li>
+                    <li><strong><?php esc_html_e('Para lista de países:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code></li>
+                    <li><strong><?php esc_html_e('Para journals BVS:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-bvs-journals.php</code></li>
+                </ul>
+                <p><?php esc_html_e('Após subir os arquivos, ative o modo "Custom" nas opções abaixo.', 'country-pages'); ?></p>
+            </div>
 
-            <h2 class="title">Country (single)</h2>
-            <p>
-              <label for="cp_template_mode_country"><strong>Modo</strong></label><br/>
-              <select name="<?php echo esc_attr(self::OPT_MODE_COUNTRY); ?>" id="cp_template_mode_country">
-                <option value="default" <?php selected($modeCountry, 'default'); ?>>Default</option>
-                <option value="custom"  <?php selected($modeCountry, 'custom'); ?>>Custom</option>
-              </select>
-            </p>
-            <p><em>Arquivo editado:</em> <code><?php echo esc_html(self::FILE_COUNTRY); ?></code></p>
-            <textarea id="cp-custom-country" name="cp_custom_country" style="width:100%;height:320px;"><?php echo esc_textarea($countryCode); ?></textarea>
+            <form method="post">
+                <?php settings_fields('cp_templates'); ?>
+                <?php wp_nonce_field('cp_templates_nonce', 'cp_templates_nonce_field'); ?>
 
-            <hr/>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="cp_template_mode_country"><?php esc_html_e('Template de País Individual', 'country-pages'); ?></label>
+                        </th>
+                        <td>
+                            <select name="<?php echo esc_attr(self::OPT_MODE_COUNTRY); ?>" id="cp_template_mode_country">
+                                <option value="default" <?php selected($modeCountry, 'default'); ?>><?php esc_html_e('Padrão', 'country-pages'); ?></option>
+                                <option value="custom" <?php selected($modeCountry, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
+                            </select>
+                            <p class="description">
+                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code><br>
+                                <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
+                                <?php if ($countryTemplateExists): ?>
+                                    <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
+                                <?php else: ?>
+                                    <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
+                                <?php endif; ?>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="cp_template_mode_list"><?php esc_html_e('Template de Lista de Países', 'country-pages'); ?></label>
+                        </th>
+                        <td>
+                            <select name="<?php echo esc_attr(self::OPT_MODE_LIST); ?>" id="cp_template_mode_list">
+                                <option value="default" <?php selected($modeList, 'default'); ?>><?php esc_html_e('Padrão', 'country-pages'); ?></option>
+                                <option value="custom" <?php selected($modeList, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
+                            </select>
+                            <p class="description">
+                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code><br>
+                                <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
+                                <?php if ($listTemplateExists): ?>
+                                    <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
+                                <?php else: ?>
+                                    <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
+                                <?php endif; ?>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="cp_template_mode_bvs"><?php esc_html_e('Template de Journals BVS', 'country-pages'); ?></label>
+                        </th>
+                        <td>
+                            <select name="<?php echo esc_attr(self::OPT_MODE_BVS); ?>" id="cp_template_mode_bvs">
+                                <option value="default" <?php selected($modeBvs, 'default'); ?>><?php esc_html_e('Padrão', 'country-pages'); ?></option>
+                                <option value="custom" <?php selected($modeBvs, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
+                            </select>
+                            <p class="description">
+                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-bvs-journals.php</code><br>
+                                <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
+                                <?php if ($bvsTemplateExists): ?>
+                                    <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
+                                <?php else: ?>
+                                    <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
+                                <?php endif; ?>
+                                <br><strong><?php esc_html_e('Shortcode:', 'country-pages'); ?></strong> <code>[bvs_journals]</code>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
 
-            <h2 class="title">List (lista de países)</h2>
-            <p>
-              <label for="cp_template_mode_list"><strong>Modo</strong></label><br/>
-              <select name="<?php echo esc_attr(self::OPT_MODE_LIST); ?>" id="cp_template_mode_list">
-                <option value="default" <?php selected($modeList, 'default'); ?>>Default</option>
-                <option value="custom"  <?php selected($modeList, 'custom'); ?>>Custom</option>
-              </select>
-            </p>
-            <p><em>Arquivo editado:</em> <code><?php echo esc_html(self::FILE_LIST); ?></code></p>
-            <textarea id="cp-custom-list" name="cp_custom_list" style="width:100%;height:320px;"><?php echo esc_textarea($listCode); ?></textarea>
-
-            <?php submit_button('Salvar'); ?>
-          </form>
+                <?php submit_button(__('Salvar Configurações', 'country-pages')); ?>
+            </form>
         </div>
-
-        <script>
-        (function(){
-          if (!window.cpCodeEditorSettings || !wp || !wp.codeEditor) return;
-          wp.codeEditor.initialize('cp-custom-country', window.cpCodeEditorSettings);
-          wp.codeEditor.initialize('cp-custom-list', window.cpCodeEditorSettings);
-        }());
-        </script>
         <?php
     }
 
     private static function handle_post(): void {
         if (!current_user_can(self::CAPABILITY)) return;
 
-        // modos : dependendo do que o usuário escolhei no admin
+        // Salva apenas os modos selecionados
         update_option(self::OPT_MODE_COUNTRY, (isset($_POST[self::OPT_MODE_COUNTRY]) && $_POST[self::OPT_MODE_COUNTRY] === 'custom') ? 'custom' : 'default');
-        update_option(self::OPT_MODE_LIST,    (isset($_POST[self::OPT_MODE_LIST])    && $_POST[self::OPT_MODE_LIST]    === 'custom') ? 'custom' : 'default');
+        update_option(self::OPT_MODE_LIST, (isset($_POST[self::OPT_MODE_LIST]) && $_POST[self::OPT_MODE_LIST] === 'custom') ? 'custom' : 'default');
+        update_option(self::OPT_MODE_BVS, (isset($_POST[self::OPT_MODE_BVS]) && $_POST[self::OPT_MODE_BVS] === 'custom') ? 'custom' : 'default');
 
-        $countryCode = isset($_POST['cp_custom_country']) ? wp_unslash($_POST['cp_custom_country']) : '';
-        $listCode    = isset($_POST['cp_custom_list'])    ? wp_unslash($_POST['cp_custom_list'])    : '';
-
-        // tenta escrever nos arquivos do plugin
-        $okFiles = self::write_files_atomically([
-            self::file_path(self::FILE_COUNTRY) => $countryCode,
-            self::file_path(self::FILE_LIST)    => $listCode,
-        ]);
-
-        if (!$okFiles) {
-            update_option(self::OPT_CODE_COUNTRY, $countryCode);
-            update_option(self::OPT_CODE_LIST,    $listCode);
-            add_settings_error('cp_templates', 'saved_opt', 'FS somente-leitura: código salvo no banco e será usado via fallback.', 'warning');
-        } else {
-            delete_option(self::OPT_CODE_COUNTRY);
-            delete_option(self::OPT_CODE_LIST);
-            add_settings_error('cp_templates', 'saved', 'Templates atualizados no arquivo do plugin.', 'updated');
-        }
+        add_settings_error('cp_templates', 'saved', __('Configurações de templates salvas com sucesso.', 'country-pages'), 'updated');
     }
 
-    private static function write_files_atomically(array $map): bool {
-        if ( ! function_exists('request_filesystem_credentials') ) require_once ABSPATH . 'wp-admin/includes/file.php';
-        WP_Filesystem();
-        global $wp_filesystem;
-
-        foreach ($map as $path => $contents) {
-            $dir = dirname($path);
-            if (!file_exists($dir)) {
-                return false;
-            }
-            if (!is_writable($path)) {
-                // se o arquivo não for gravável, falha e ativa fallback
-                return false;
-            }
-        }
-
-        foreach ($map as $path => $contents) {
-            // grava direto (arquivo já existe no repo)
-            $ok = $wp_filesystem ? $wp_filesystem->put_contents($path, $contents) : (bool) file_put_contents($path, $contents);
-            if (!$ok) return false;
-        }
-        return true;
+    /**
+     * Método auxiliar para verificar se deve usar template customizado para BVS
+     */
+    public static function shouldUseCustomBvsTemplate(): bool {
+        return get_option(self::OPT_MODE_BVS, 'default') === 'custom';
     }
 
-    private static function defaultCountryStub(): string {
-        return <<<PHP
-<?php
-/** @var array \$country */
-echo '<div class="country-card">';
-echo '<h2>' . esc_html(\$country['name'] ?? '') . '</h2>';
-if (!empty(\$country['capital'])) {
-  echo '<p>Capital: ' . esc_html(\$country['capital']) . '</p>';
-}
-echo '</div>';
-PHP;
-    }
-
-    private static function defaultListStub(): string {
-        return <<<PHP
-<?php
-/** @var array \$countries */
-echo '<ul class="country-list">';
-foreach ((array) (\$countries ?? []) as \$c) {
-  echo '<li>' . esc_html(\$c['name'] ?? '') . '</li>';
-}
-echo '</ul>';
-PHP;
-    }
 }

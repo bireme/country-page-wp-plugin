@@ -9,7 +9,6 @@ class TemplatesPage {
     const CAPABILITY = 'manage_options';
     const OPT_MODE_COUNTRY = 'cp_template_mode_country'; // 'default' | 'custom'
     const OPT_MODE_LIST    = 'cp_template_mode_list';    // 'default' | 'custom'
-    const OPT_MODE_BVS     = 'cp_template_mode_bvs';     // 'default' | 'custom'
 
     public static function boot(): void {
         add_action('admin_menu', [self::class, 'menu']);
@@ -31,7 +30,6 @@ class TemplatesPage {
     public static function register_settings(): void {
         register_setting('cp_templates', self::OPT_MODE_COUNTRY);
         register_setting('cp_templates', self::OPT_MODE_LIST);
-        register_setting('cp_templates', self::OPT_MODE_BVS);
     }
 
     /**
@@ -59,9 +57,6 @@ class TemplatesPage {
         if ($type === 'list') {
             return $plugin_root . 'Templates/Custom/custom-list.php';
         }
-        if ($type === 'bvs') {
-            return $plugin_root . 'Templates/Custom/custom-bvs-journals.php';
-        }
         return '';
     }
 
@@ -75,15 +70,11 @@ class TemplatesPage {
 
         $modeCountry = get_option(self::OPT_MODE_COUNTRY, 'default');
         $modeList    = get_option(self::OPT_MODE_LIST, 'default');
-        $modeBvs     = get_option(self::OPT_MODE_BVS, 'default');
-        
         $countryTemplatePath = self::get_custom_template_path('country');
         $listTemplatePath = self::get_custom_template_path('list');
-        $bvsTemplatePath = self::get_custom_template_path('bvs');
         
         $countryTemplateExists = file_exists($countryTemplatePath);
         $listTemplateExists = file_exists($listTemplatePath);
-        $bvsTemplateExists = file_exists($bvsTemplatePath);
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Templates', 'country-pages'); ?></h1>
@@ -95,7 +86,6 @@ class TemplatesPage {
                 <ul>
                     <li><strong><?php esc_html_e('Para países individuais:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code></li>
                     <li><strong><?php esc_html_e('Para lista de países:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code></li>
-                    <li><strong><?php esc_html_e('Para journals BVS:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-bvs-journals.php</code></li>
                 </ul>
                 <p><?php esc_html_e('Após subir os arquivos, ative o modo "Custom" nas opções abaixo.', 'country-pages'); ?></p>
             </div>
@@ -147,27 +137,6 @@ class TemplatesPage {
                         </td>
                     </tr>
                     
-                    <tr>
-                        <th scope="row">
-                            <label for="cp_template_mode_bvs"><?php esc_html_e('Template de Journals BVS', 'country-pages'); ?></label>
-                        </th>
-                        <td>
-                            <select name="<?php echo esc_attr(self::OPT_MODE_BVS); ?>" id="cp_template_mode_bvs">
-                                <option value="default" <?php selected($modeBvs, 'default'); ?>><?php esc_html_e('Padrão', 'country-pages'); ?></option>
-                                <option value="custom" <?php selected($modeBvs, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
-                            </select>
-                            <p class="description">
-                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-bvs-journals.php</code><br>
-                                <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
-                                <?php if ($bvsTemplateExists): ?>
-                                    <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
-                                <?php else: ?>
-                                    <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
-                                <?php endif; ?>
-                                <br><strong><?php esc_html_e('Shortcode:', 'country-pages'); ?></strong> <code>[bvs_journals]</code>
-                            </p>
-                        </td>
-                    </tr>
                 </table>
 
                 <?php submit_button(__('Salvar Configurações', 'country-pages')); ?>
@@ -182,16 +151,9 @@ class TemplatesPage {
         // Salva apenas os modos selecionados
         update_option(self::OPT_MODE_COUNTRY, (isset($_POST[self::OPT_MODE_COUNTRY]) && $_POST[self::OPT_MODE_COUNTRY] === 'custom') ? 'custom' : 'default');
         update_option(self::OPT_MODE_LIST, (isset($_POST[self::OPT_MODE_LIST]) && $_POST[self::OPT_MODE_LIST] === 'custom') ? 'custom' : 'default');
-        update_option(self::OPT_MODE_BVS, (isset($_POST[self::OPT_MODE_BVS]) && $_POST[self::OPT_MODE_BVS] === 'custom') ? 'custom' : 'default');
 
         add_settings_error('cp_templates', 'saved', __('Configurações de templates salvas com sucesso.', 'country-pages'), 'updated');
     }
 
-    /**
-     * Método auxiliar para verificar se deve usar template customizado para BVS
-     */
-    public static function shouldUseCustomBvsTemplate(): bool {
-        return get_option(self::OPT_MODE_BVS, 'default') === 'custom';
-    }
 
 }

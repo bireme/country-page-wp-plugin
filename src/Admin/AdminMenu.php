@@ -41,16 +41,12 @@ final class AdminMenu {
             <h1><?php esc_html_e('Country Pages', 'country-pages'); ?></h1>
             <div class="card">
                 <h2><?php esc_html_e('Bem-vindo ao Country Pages', 'country-pages'); ?></h2>
-                <p><?php esc_html_e('Este plugin permite consumir dados de países via API REST personalizada e periódicos científicos via API BVS Saúde, exibindo os dados através de shortcodes flexíveis e templates customizáveis.', 'country-pages'); ?></p>
-                
-                <div class="notice notice-info inline">
-                    <p><strong><?php esc_html_e('Novidade:', 'country-pages'); ?></strong> <?php esc_html_e('Integração completa com API BVS Saúde para exibição de journals científicos com sistema de templates robusto!', 'country-pages'); ?></p>
-                </div>
+                <p><?php esc_html_e('Este plugin permite consumir dados de países via API REST personalizada, exibindo os dados através de shortcodes flexíveis e templates customizáveis.', 'country-pages'); ?></p>
                 
                 <h3><?php esc_html_e('Páginas de Configuração:', 'country-pages'); ?></h3>
                 <ul>
-                    <li><strong><?php esc_html_e('Configurações', 'country-pages'); ?></strong> - <?php esc_html_e('Configure endpoints das APIs (países e BVS Saúde), tokens de acesso e CSS/JS customizados', 'country-pages'); ?></li>
-                    <li><strong><?php esc_html_e('Templates', 'country-pages'); ?></strong> - <?php esc_html_e('Configure templates para países, listas e journals BVS (padrão ou customizado)', 'country-pages'); ?></li>
+                    <li><strong><?php esc_html_e('Configurações', 'country-pages'); ?></strong> - <?php esc_html_e('Configure endpoint da API de países e CSS/JS customizados', 'country-pages'); ?></li>
+                    <li><strong><?php esc_html_e('Templates', 'country-pages'); ?></strong> - <?php esc_html_e('Configure templates para países e listas (padrão ou customizado)', 'country-pages'); ?></li>
                     <li><strong><?php esc_html_e('Mapeamento ACF', 'country-pages'); ?></strong> - <?php esc_html_e('Configure o mapeamento de campos ACF para países', 'country-pages'); ?></li>
                 </ul>
 
@@ -59,7 +55,6 @@ final class AdminMenu {
                 <ul>
                     <li><code>Templates/Custom/custom-country.php</code> - <?php esc_html_e('Template para países individuais', 'country-pages'); ?></li>
                     <li><code>Templates/Custom/custom-list.php</code> - <?php esc_html_e('Template para lista de países', 'country-pages'); ?></li>
-                    <li><code>Templates/Custom/custom-bvs-journals.php</code> - <strong><?php esc_html_e('Template para journals BVS (NOVO)', 'country-pages'); ?></strong></li>
                 </ul>
                 <p><?php esc_html_e('Após subir os arquivos, ative o modo "Customizado" na página Templates para cada tipo.', 'country-pages'); ?></p>
 
@@ -71,14 +66,6 @@ final class AdminMenu {
                     <li><code>[country_list per_page="12"]</code> - <?php esc_html_e('Exibe lista de países com paginação', 'country-pages'); ?></li>
                 </ul>
                 
-                <h4><?php esc_html_e('Shortcodes de Journals (BVS Saúde):', 'country-pages'); ?></h4>
-                <ul>
-                    <li><code>[bvs_journals country="Brazil"]</code> - <?php esc_html_e('Journals por país', 'country-pages'); ?></li>
-                    <!-- Testando ainda -->
-                    <!-- <li><code>[bvs_journals search="medicina" template="grid"]</code> - <?php esc_html_e('Busca com template grid responsivo', 'country-pages'); ?></li>
-                    <li><code>[bvs_journals issn="1234-5678" template="detailed"]</code> - <?php esc_html_e('Journal específico por ISSN', 'country-pages'); ?></li>
-                    <li><code>[bvs_journals subject="saúde pública" show_pagination="true"]</code> - <?php esc_html_e('Por área temática com paginação', 'country-pages'); ?></li> -->
-                </ul>
                 
                 
                 

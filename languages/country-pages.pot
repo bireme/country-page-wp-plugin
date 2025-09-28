@@ -132,17 +132,3 @@ msgstr ""
 msgid "Configure os endpoints das APIs, tokens de acesso e personalizações CSS/JS."
 msgstr ""
 
-msgid "URL API de Journals"
-msgstr ""
-
-msgid "URL da API para consulta de journals."
-msgstr ""
-
-msgid "BVSalud Token"
-msgstr ""
-
-msgid "Token de acesso"
-msgstr ""
-
-msgid "Token de autenticação para acesso à API BVSalud."
-msgstr ""

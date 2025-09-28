@@ -7,8 +7,6 @@ final class SettingsPage {
     const OPTION_ENDPOINT = 'cp_api_endpoint';
     const OPTION_CUSTOM_CSS = 'cp_custom_css';
     const OPTION_CUSTOM_JS  = 'cp_custom_js';
-    const OPTION_JOURNALS_API_URL = 'cp_journals_api_url';
-    const OPTION_BVSALUD_TOKEN = 'cp_bvsalud_token';
 
     public function register(): void {
         add_action('admin_menu', [$this, 'addMenu']);
@@ -46,20 +44,9 @@ final class SettingsPage {
             'default' => '',
         ]);
 
-        register_setting('cp_settings', self::OPTION_JOURNALS_API_URL, [
-            'type' => 'string',
-            'sanitize_callback' => 'esc_url_raw',
-            'default' => '',
-        ]);
-
-        register_setting('cp_settings', self::OPTION_BVSALUD_TOKEN, [
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => '',
-        ]);
 
         add_settings_section('cp_main', __('Configurações', 'country-pages'), function () {
-            echo '<p>' . esc_html__('Configure os endpoints das APIs, tokens de acesso e personalizações CSS/JS.', 'country-pages') . '</p>';
+            echo '<p>' . esc_html__('Configure o endpoint da API de países e personalizações CSS/JS.', 'country-pages') . '</p>';
         }, 'country-pages');
 
         add_settings_field(self::OPTION_ENDPOINT, __('Endpoint da API', 'country-pages'), function () {
@@ -67,17 +54,6 @@ final class SettingsPage {
             echo '<input type="url" name="' . esc_attr(self::OPTION_ENDPOINT) . '" class="regular-text" placeholder="https://site.com/wp-json/wp/v2/countries" value="' . $value . '"/>';
         }, 'country-pages', 'cp_main');
 
-        add_settings_field(self::OPTION_JOURNALS_API_URL, __('URL API de Journals', 'country-pages'), function () {
-            $value = esc_url(get_option(self::OPTION_JOURNALS_API_URL, ''));
-            echo '<input type="url" name="' . esc_attr(self::OPTION_JOURNALS_API_URL) . '" class="regular-text" placeholder="https://api.journals.com/endpoint" value="' . $value . '"/>';
-            echo '<p class="description">' . esc_html__('URL da API para consulta de journals.', 'country-pages') . '</p>';
-        }, 'country-pages', 'cp_main');
-
-        add_settings_field(self::OPTION_BVSALUD_TOKEN, __('BVSalud Token', 'country-pages'), function () {
-            $value = get_option(self::OPTION_BVSALUD_TOKEN, '');
-            echo '<input type="password" name="' . esc_attr(self::OPTION_BVSALUD_TOKEN) . '" class="regular-text" placeholder="' . esc_attr__('Token de acesso', 'country-pages') . '" value="' . esc_attr($value) . '"/>';
-            echo '<p class="description">' . esc_html__('Token de autenticação para acesso à API BVSalud.', 'country-pages') . '</p>';
-        }, 'country-pages', 'cp_main');
 
         add_settings_field(self::OPTION_CUSTOM_CSS, __('CSS customizado', 'country-pages'), function () {
             $value = esc_textarea(get_option(self::OPTION_CUSTOM_CSS, ''));
@@ -123,13 +99,6 @@ final class SettingsPage {
     /**
      * Métodos auxiliares para acessar as configurações
      */
-    public static function getJournalsApiUrl(): string {
-        return get_option(self::OPTION_JOURNALS_API_URL, '');
-    }
-
-    public static function getBvsaludToken(): string {
-        return get_option(self::OPTION_BVSALUD_TOKEN, '');
-    }
 
     public static function getApiEndpoint(): string {
         return get_option(self::OPTION_ENDPOINT, '');

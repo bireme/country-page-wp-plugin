@@ -7,8 +7,8 @@ if (!defined('ABSPATH')) exit;
 
 class TemplatesPage {
     const CAPABILITY = 'manage_options';
-    const OPT_MODE_COUNTRY = 'cp_template_mode_country'; // 'default' | 'custom'
-    const OPT_MODE_LIST    = 'cp_template_mode_list';    // 'default' | 'custom'
+    const OPT_MODE_COUNTRY = 'cp_template_mode_country';
+    const OPT_MODE_LIST    = 'cp_template_mode_list';
 
     public static function boot(): void {
         add_action('admin_menu', [self::class, 'menu']);
@@ -32,20 +32,13 @@ class TemplatesPage {
         register_setting('cp_templates', self::OPT_MODE_LIST);
     }
 
-    /**
-     * Remove opções antigas do sistema de templates baseado em código no banco
-     */
     public static function cleanup_old_options(): void {
-        // Remove as opções antigas apenas uma vez
         if (get_option('cp_templates_cleaned', false)) {
             return;
         }
 
-        // Remove opções antigas do editor de código
         delete_option('cp_template_code_country');
         delete_option('cp_template_code_list');
-        
-        // Marca como limpo para não executar novamente
         update_option('cp_templates_cleaned', true);
     }
 
@@ -148,7 +141,6 @@ class TemplatesPage {
     private static function handle_post(): void {
         if (!current_user_can(self::CAPABILITY)) return;
 
-        // Salva apenas os modos selecionados
         update_option(self::OPT_MODE_COUNTRY, (isset($_POST[self::OPT_MODE_COUNTRY]) && $_POST[self::OPT_MODE_COUNTRY] === 'custom') ? 'custom' : 'default');
         update_option(self::OPT_MODE_LIST, (isset($_POST[self::OPT_MODE_LIST]) && $_POST[self::OPT_MODE_LIST] === 'custom') ? 'custom' : 'default');
 

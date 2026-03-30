@@ -132,3 +132,60 @@ msgstr ""
 msgid "Configure os endpoints das APIs, tokens de acesso e personalizações CSS/JS."
 msgstr ""
 
+msgid "Este plugin permite consumir dados de países via API REST personalizada, exibindo os dados através de shortcodes flexíveis e templates customizáveis."
+msgstr ""
+
+msgid "Páginas de administração"
+msgstr ""
+
+msgid "Endpoint da API REST de países; prefixo da URL pública de cada país (ex.: /pais/brasil/), o mesmo slug usado no shortcode [country]; CSS e JavaScript customizados no front (apenas quando quem salvou tiver permissão para HTML não filtrado)."
+msgstr ""
+
+msgid "Modo padrão ou customizado para cartão de país e para lista, usando arquivos em Templates/Custom/."
+msgstr ""
+
+msgid "Quais campos ACF da API entram nos templates e como são tratados."
+msgstr ""
+
+msgid "URLs públicas de país"
+msgstr ""
+
+msgid "Além do shortcode, cada país fica disponível em uma URL amigável: /{prefixo}/{slug}/ (prefixo configurável em Configurações; padrão “pais”). O conteúdo corresponde à página completa do país, como no shortcode. Se mudar o prefixo, confira em Ajustes → Links permanentes se as URLs continuam corretas."
+msgstr ""
+
+msgid "Shortcodes disponíveis"
+msgstr ""
+
+msgid "Cartão ou página de um país pelo slug da API."
+msgstr ""
+
+msgid "Opcionais: title-only, content-only, image-only (valor true exibe só essa parte)."
+msgstr ""
+
+msgid "Lista com filtros, cards e paginação. Parâmetros de URL: cp_cl_search, cp_cl_tag, cp_cl_cat, cp_cl_page. IDs numéricos em tag e category."
+msgstr ""
+
+msgid "Carrossel horizontal de países. itens = total buscado na API; itens-per-round = quantos slides visíveis; loop = true/false; tag-filter e category-filter = ID numérico. Também aceita aliases com sublinhado: itens_per_round, tag_filter, category_filter."
+msgstr ""
+
+msgid "Sistema de Templates:"
+msgstr ""
+
+msgid "O plugin oferece templates padrão e a possibilidade de usar templates personalizados. Para templates customizados, suba os arquivos na pasta:"
+msgstr ""
+
+msgid "Configure o endpoint da API de países e personalizações CSS/JS."
+msgstr ""
+
+msgid "Páginas públicas ficam em /prefixo/slug/ (ex.: /pais/brasil/). O slug é o mesmo usado em [country slug=\"…\"]. Após alterar, confira em Ajustes → Links permanentes se o site já reescreve URLs corretamente."
+msgstr ""
+
+msgid "Prefixo da URL do país"
+msgstr ""
+
+msgid "Versão %s"
+msgstr ""
+
+msgid "Exemplo"
+msgstr ""
+

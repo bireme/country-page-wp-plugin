@@ -8,7 +8,6 @@ if (!defined('ABSPATH')) exit;
  * TTL ajustável via filtro 'cp_cache_ttl' (padrão 3600s).
  */
 
-//Eu não sei se isso é realmente bom (vamos testar para ver se ajuda na performance, não fica chamando api toda hora)
 final class Cache {
     public static function remember(string $key, callable $callback, ?int $ttl = null) {
         $hit = get_transient($key);

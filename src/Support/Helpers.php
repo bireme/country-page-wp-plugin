@@ -5,22 +5,22 @@ if (!defined('ABSPATH')) exit;
 
 final class Helpers {
     /**
-     * Carrega um template do plugin permitindo override pelo tema:
-     *  - theme/country-pages/country-card.php
-     *  - plugin/src/Templates/country-card.php (fallback)
-     *
-     * @param string $templateName
-     * @param array  $vars
+     * Tema: country-pages/{template}; fallback no plugin. $preferTheme false força só o plugin.
      */
-    public static function renderTemplate(string $templateName, array $vars = []): string {
+    public static function renderTemplate(string $templateName, array $vars = [], bool $preferTheme = true): string {
         $themePath = locate_template('country-pages/' . $templateName);
         $pluginPath = \CP_PLUGIN_DIR . 'src/Templates/' . $templateName;
 
-        $file = $themePath ?: $pluginPath;
+        if ($preferTheme && $themePath) {
+            $file = $themePath;
+        } elseif (!$preferTheme && file_exists($pluginPath)) {
+            $file = $pluginPath;
+        } else {
+            $file = $themePath ?: $pluginPath;
+        }
         if (!file_exists($file)) return '';
 
         ob_start();
-        // Torna $vars disponíveis como variáveis
         extract($vars, EXTR_SKIP);
         include $file;
         return (string) ob_get_clean();

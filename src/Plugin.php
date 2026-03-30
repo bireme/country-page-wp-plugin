@@ -3,16 +3,15 @@ namespace CP;
 
 use CP\Admin\AdminMenu;
 use CP\Admin\SettingsPage;
+use CP\Front\CountryPageRoute;
 use CP\Shortcodes\CountryCardShortcode;
 use CP\Shortcodes\CountryListShortcode;
+use CP\Shortcodes\CountrySliderShortcode;
 
 final class Plugin {
     public function boot(): void {
-        
-        // Assets públicos
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
 
-        // Admin
         if (is_admin()) {
             (new AdminMenu())->register();
             (new SettingsPage())->register();
@@ -20,11 +19,12 @@ final class Plugin {
             \CP\Admin\AcfMappingPage::boot();
         }
 
-        // Shortcodes 
         (new CountryCardShortcode())->register();
         (new CountryListShortcode())->register();
+        (new CountrySliderShortcode())->register();
 
-        // Custom CSS/JS do admin (config) — só imprime no front se houver e usuário tiver salvo
+        (new CountryPageRoute())->register();
+
         add_action('wp_head', [$this, 'printCustomCSS']);
         add_action('wp_footer', [$this, 'printCustomJS']);
     }
@@ -37,8 +37,6 @@ final class Plugin {
     public function printCustomCSS(): void {
         $css = get_option('cp_custom_css');
         if (!empty($css)) {
-            // Permite HTML cru apenas para quem tem unfiltered_html (admins); senão, limpa
-            // Evista que um usuário crie algum css que interfira no site em locais onde não deveria (como aconteceu no portal)
             if (current_user_can('unfiltered_html')) {
                 echo "<style id='cp-custom-css'>\n" . $css . "\n</style>";
             }
@@ -48,8 +46,6 @@ final class Plugin {
     public function printCustomJS(): void {
         $js = get_option('cp_custom_js');
         if (!empty($js)) {
-            //Mesma coisa do css.
-            //Evita uso indiscriminado e interferência no site
             if (current_user_can('unfiltered_html')) {
                 echo "<script id='cp-custom-js'>\n" . $js . "\n</script>";
             }

@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) exit;
 
 final class SettingsPage {
     const OPTION_ENDPOINT = 'cp_api_endpoint';
+    const OPTION_COUNTRY_URL_BASE = 'cp_country_url_base';
     const OPTION_CUSTOM_CSS = 'cp_custom_css';
     const OPTION_CUSTOM_JS  = 'cp_custom_js';
 
@@ -32,6 +33,15 @@ final class SettingsPage {
             'default' => '',
         ]);
 
+        register_setting('cp_settings', self::OPTION_COUNTRY_URL_BASE, [
+            'type' => 'string',
+            'sanitize_callback' => static function ($value): string {
+                $v = sanitize_title(trim((string) $value));
+                return $v !== '' ? $v : 'pais';
+            },
+            'default' => 'pais',
+        ]);
+
         register_setting('cp_settings', self::OPTION_CUSTOM_CSS, [
             'type' => 'string',
             'sanitize_callback' => [$this, 'sanitizeMaybe'],
@@ -54,6 +64,14 @@ final class SettingsPage {
             echo '<input type="url" name="' . esc_attr(self::OPTION_ENDPOINT) . '" class="regular-text" placeholder="https://site.com/wp-json/wp/v2/countries" value="' . $value . '"/>';
         }, 'country-pages', 'cp_main');
 
+        add_settings_field(self::OPTION_COUNTRY_URL_BASE, __('Prefixo da URL do país', 'country-pages'), function () {
+            $value = esc_attr(get_option(self::OPTION_COUNTRY_URL_BASE, 'pais'));
+            echo '<input type="text" name="' . esc_attr(self::OPTION_COUNTRY_URL_BASE) . '" class="regular-text" value="' . $value . '" />';
+            echo '<p class="description">' . esc_html__(
+                'Páginas públicas ficam em /prefixo/slug/ (ex.: /pais/brasil/). O slug é o mesmo usado em [country slug="…"]. Após alterar, confira em Ajustes → Links permanentes se o site já reescreve URLs corretamente.',
+                'country-pages'
+            ) . '</p>';
+        }, 'country-pages', 'cp_main');
 
         add_settings_field(self::OPTION_CUSTOM_CSS, __('CSS customizado', 'country-pages'), function () {
             $value = esc_textarea(get_option(self::OPTION_CUSTOM_CSS, ''));
@@ -88,17 +106,10 @@ final class SettingsPage {
         wp_enqueue_script('cp-admin', \CP_PLUGIN_URL . 'src/Assets/admin.js', [], \CP_VERSION, true);
     }
 
-    /**
-     * Permite HTML cru apenas para quem tem unfiltered_html (admins); senão, limpa.
-     */
     public function sanitizeMaybe($value): string {
         if (current_user_can('unfiltered_html')) return (string) $value;
         return sanitize_textarea_field((string) $value);
     }
-
-    /**
-     * Métodos auxiliares para acessar as configurações
-     */
 
     public static function getApiEndpoint(): string {
         return get_option(self::OPTION_ENDPOINT, '');

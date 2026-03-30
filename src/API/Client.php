@@ -4,17 +4,12 @@ namespace CP\API;
 if (!defined('ABSPATH')) exit;
 
 /**
- * Cliente simples para a API WP REST do site remoto.
- * Espera endpoints como: /wp-json/wp/v2/countries?per_page=...&search=...
- * Endpoint que eu recebo lá na página de cadastro do plugin...
+ * Cliente HTTP para a API REST de países (ex.: wp/v2/countries).
+ * A URL base vem da opção configurada no admin.
  */
-
-//TODO: assim como o normilizer esse cara pode ser abstraido para ser reutilizado,
-// os nomes remetendo a country tem que sair (fazer isso depois)
 final class Client {
     private string $endpoint;
 
-    /** Última mensagem de erro (para exibição no shortcode) */
     private string $lastError = '';
 
     public function __construct(?string $endpoint = null) {
@@ -33,11 +28,13 @@ final class Client {
             return null;
         }
 
-        $url = add_query_arg(['slug' => $slug, 'per_page' => 1], $this->endpoint);
+        $url = add_query_arg(
+            ['slug' => $slug, 'per_page' => 1, '_embed' => 1],
+            $this->endpoint
+        );
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
 
         if (is_wp_error($res)) {
-            var_dump($res->get_error_message());
             $this->lastError = __('Erro na requisição: ', 'country-pages') . $res->get_error_message()
                 . $this->formatRawResponse(null, null, $url);
             return null;
@@ -47,7 +44,6 @@ final class Client {
         $bodyRaw = wp_remote_retrieve_body($res);
 
         if ($code !== 200) {
-            var_dump($code, $bodyRaw);
             $this->lastError = __('Resposta inesperada da API. Código HTTP: ', 'country-pages') . $code
                 . $this->formatRawResponse($code, $bodyRaw, $url);
             return null;
@@ -77,23 +73,144 @@ final class Client {
         return $out;
     }
 
-    //Função de Listagem (pode mudar parametros em breve)
+    /** @return array{items: array<int, array<string, mixed>>, total: int, total_pages: int} */
     public function listCountries(array $args = []): array {
-        if (!$this->endpoint) return [];
+        $empty = ['items' => [], 'total' => 0, 'total_pages' => 0];
+        if (!$this->endpoint) {
+            return $empty;
+        }
 
         $defaults = [
             'per_page' => 12,
             'page'     => 1,
             'search'   => '',
         ];
-        $query = array_filter(array_merge($defaults, $args), fn($v) => $v !== '' && $v !== null);
+        $query = array_merge($defaults, $args, ['_embed' => 1]);
+        $query = array_filter(
+            $query,
+            static function ($v, $k): bool {
+                if ($v === '' || $v === null) {
+                    return false;
+                }
+                if (($k === 'tags' || $k === 'categories') && (int) $v < 1) {
+                    return false;
+                }
+                return true;
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
         $url   = add_query_arg($query, $this->endpoint);
 
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
-        if (is_wp_error($res)) return [];
-        if (wp_remote_retrieve_response_code($res) !== 200) return [];
+        if (is_wp_error($res)) {
+            return $empty;
+        }
+        if (wp_remote_retrieve_response_code($res) !== 200) {
+            return $empty;
+        }
 
         $body = json_decode(wp_remote_retrieve_body($res), true);
+        $items = is_array($body) ? $body : [];
+
+        $total = (int) wp_remote_retrieve_header($res, 'x-wp-total');
+        $totalPages = (int) wp_remote_retrieve_header($res, 'x-wp-totalpages');
+
+        if ($total < 1 && $items !== []) {
+            $total = count($items);
+        }
+        $perPage = max(1, (int) ($query['per_page'] ?? 12));
+        if ($totalPages < 1 && $total > 0) {
+            $totalPages = (int) max(1, ceil($total / $perPage));
+        }
+        if ($totalPages < 1) {
+            $totalPages = 1;
+        }
+
+        return [
+            'items'       => $items,
+            'total'       => $total,
+            'total_pages' => $totalPages,
+        ];
+    }
+
+    public function getRestBaseUrl(): string {
+        $e = trim($this->endpoint);
+        if ($e === '') {
+            return '';
+        }
+        $e = (string) strtok($e, '?');
+        $pos = strpos($e, '/wp-json');
+        if ($pos === false) {
+            return '';
+        }
+        return substr($e, 0, $pos + strlen('/wp-json'));
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function getRestCollection(string $route, array $query = []): array {
+        $base = $this->getRestBaseUrl();
+        if ($base === '') {
+            return [];
+        }
+        $route = ltrim($route, '/');
+        $url = trailingslashit($base) . $route;
+        $query = array_merge(
+            [
+                'per_page' => 100,
+            ],
+            $query
+        );
+        $url = add_query_arg($query, $url);
+
+        $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
+        if (is_wp_error($res) || wp_remote_retrieve_response_code($res) !== 200) {
+            return [];
+        }
+        $body = json_decode(wp_remote_retrieve_body($res), true);
         return is_array($body) ? $body : [];
+    }
+
+    /** @return array<int, array{id: int, name: string, slug: string}> */
+    public function getTags(array $query = []): array {
+        $route = (string) apply_filters('cp_country_api_tags_route', 'wp/v2/tags');
+        $raw = $this->getRestCollection($route, $query);
+        return $this->normalizeTermList($raw);
+    }
+
+    /** @return array<int, array{id: int, name: string, slug: string}> */
+    public function getCategories(array $query = []): array {
+        $route = (string) apply_filters('cp_country_api_categories_route', 'wp/v2/categories');
+        $raw = $this->getRestCollection($route, $query);
+        return $this->normalizeTermList($raw);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $raw
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    private function normalizeTermList(array $raw): array {
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = isset($row['id']) ? (int) $row['id'] : 0;
+            if ($id < 1) {
+                continue;
+            }
+            $name = $row['name'] ?? '';
+            if (is_array($name)) {
+                $name = (string) ($name['rendered'] ?? '');
+            } else {
+                $name = (string) $name;
+            }
+            $name = wp_strip_all_tags($name);
+            $out[] = [
+                'id'   => $id,
+                'name' => $name,
+                'slug' => (string) ($row['slug'] ?? ''),
+            ];
+        }
+        return $out;
     }
 }

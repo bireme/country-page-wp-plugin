@@ -8,13 +8,7 @@ class Template {
         return trailingslashit(dirname(__DIR__, 1)); 
     }
 
-    /**
-     * Carrega template customizado da pasta Templates/Custom
-     * 
-     * @param string $which - 'country' ou 'list'
-     * @param array $vars - Variáveis para o template
-     * @return string|null
-     */
+    /** @param 'country'|'list' $which */
     public static function load_custom(string $which, array $vars): ?string {
         $file = null;
         if ($which === 'country') {
@@ -24,7 +18,6 @@ class Template {
             $file = self::plugin_root() . 'Templates/Custom/custom-list.php';
         }
 
-        // Verifica se o arquivo customizado existe na pasta Custom
         if ($file && file_exists($file)) {
             ob_start();
             extract($vars, EXTR_SKIP);
@@ -35,12 +28,7 @@ class Template {
         return null;
     }
 
-    /**
-     * Verifica se existe template customizado para o tipo especificado
-     * 
-     * @param string $which - 'country' ou 'list'
-     * @return bool
-     */
+    /** @param 'country'|'list' $which */
     public static function has_custom_template(string $which): bool {
         $file = null;
         if ($which === 'country') {

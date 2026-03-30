@@ -1,16 +1,5 @@
 <?php
-/**
- * Template customizado para exibição de lista de países
- * 
- * @var array $countries - Array com dados dos países
- * 
- * Cada item do array contém:
- * - $country['name'] - Nome do país
- * - $country['capital'] - Capital
- * - $country['population'] - População
- * - $country['flag'] - URL da bandeira
- * - Outros campos conforme configuração da API
- */
+/** @var array<int, array<string, mixed>> $countries */
 
 if (!defined('ABSPATH')) exit;
 ?>

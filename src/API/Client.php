@@ -35,8 +35,14 @@ final class Client {
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
 
         if (is_wp_error($res)) {
-            $this->lastError = __('Erro na requisição: ', 'country-pages') . $res->get_error_message()
-                . $this->formatRawResponse(null, null, $url);
+            $this->lastError = __('Não foi possível consultar os dados do país no momento.', 'country-pages');
+            $this->logRequestError(
+                'request_error',
+                __('Erro na requisição: ', 'country-pages') . $res->get_error_message(),
+                null,
+                null,
+                $url
+            );
             return null;
         }
 
@@ -44,15 +50,27 @@ final class Client {
         $bodyRaw = wp_remote_retrieve_body($res);
 
         if ($code !== 200) {
-            $this->lastError = __('Resposta inesperada da API. Código HTTP: ', 'country-pages') . $code
-                . $this->formatRawResponse($code, $bodyRaw, $url);
+            $this->lastError = __('Não foi possível carregar este país agora. Tente novamente em instantes.', 'country-pages');
+            $this->logRequestError(
+                'unexpected_http_code',
+                __('Resposta inesperada da API. Código HTTP: ', 'country-pages') . $code,
+                $code,
+                $bodyRaw,
+                $url
+            );
             return null;
         }
 
         $body = json_decode($bodyRaw, true);
         if (!is_array($body) || empty($body[0])) {
-            $this->lastError = __('Nenhum país encontrado para o slug informado.', 'country-pages')
-                . $this->formatRawResponse($code, $bodyRaw, $url);
+            $this->lastError = __('Nenhum país foi encontrado para este endereço.', 'country-pages');
+            $this->logRequestError(
+                'country_not_found',
+                __('Nenhum país encontrado para o slug informado.', 'country-pages'),
+                $code,
+                $bodyRaw,
+                $url
+            );
             return null;
         }
 
@@ -71,6 +89,17 @@ final class Client {
             $out .= $label . ': ' . esc_html($value) . "\n";
         }
         return $out;
+    }
+
+    private function logRequestError(string $context, string $message, ?int $code, ?string $body, string $url): void {
+        error_log(
+            sprintf(
+                '[Country Pages][%s] %s%s',
+                $context,
+                wp_strip_all_tags($message),
+                $this->formatRawResponse($code, $body, $url)
+            )
+        );
     }
 
     /** @return array{items: array<int, array<string, mixed>>, total: int, total_pages: int} */

@@ -187,6 +187,7 @@ $hasActiveFilters = $filterSearch !== '' || $filterTagId > 0 || $filterCatId > 0
                   }
               }
               $excerpt = $excerpt_for_card($country);
+              $tags = !empty($country['tags']) && is_array($country['tags']) ? $country['tags'] : [];
               $itemSlug = (string) ($country['slug'] ?? '');
               $localUrl = \CP\Front\CountryPageRoute::permalinkForSlug($itemSlug);
               $viewUrl = (string) apply_filters('cp_country_list_item_url', $localUrl, $country);
@@ -210,6 +211,15 @@ $hasActiveFilters = $filterSearch !== '' || $filterTagId > 0 || $filterCatId > 0
               </div>
               <div class="cp-country-card__body">
                 <h3 class="cp-country-card__title"><?= esc_html($title) ?></h3>
+                <?php if (!empty($tags)): ?>
+                  <div class="cp-country-card__tags" aria-label="<?php esc_attr_e('Tags do país', 'country-pages'); ?>">
+                    <?php foreach ($tags as $tag): ?>
+                      <?php $tagName = (string) ($tag['name'] ?? ''); ?>
+                      <?php if ($tagName === '') continue; ?>
+                      <span class="cp-country-card__tag"><?= esc_html($tagName) ?></span>
+                    <?php endforeach; ?>
+                  </div>
+                <?php endif; ?>
                 <?php if ($excerpt !== ''): ?>
                   <p class="cp-country-card__excerpt"><?= esc_html($excerpt) ?></p>
                 <?php endif; ?>

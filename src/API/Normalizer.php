@@ -27,6 +27,7 @@ final class Normalizer {
 
         $meta = $raw['meta'] ?? [];
         $featuredImage = self::extractFeaturedImage($raw);
+        $tags = self::extractTerms($raw, 'post_tag');
 
         /** @var array<string, string> $mapping */
         $mapping = get_option('cp_acf_mapping', []);
@@ -61,6 +62,7 @@ final class Normalizer {
             'excerpt' => $excerpt,
             'content' => $content,
             'featured_image' => $featuredImage,
+            'tags'    => $tags,
             'acf'     => $acfFields,
             'link'    => $link,
             'meta'    => [
@@ -159,6 +161,44 @@ final class Normalizer {
 
     public static function countryList(array $items): array {
         return array_values(array_map([self::class, 'country'], $items));
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    private static function extractTerms(array $raw, string $taxonomy): array {
+        $embeddedTerms = $raw['_embedded']['wp:term'] ?? null;
+        if (!is_array($embeddedTerms)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($embeddedTerms as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            foreach ($group as $term) {
+                if (!is_array($term)) {
+                    continue;
+                }
+                if (($term['taxonomy'] ?? '') !== $taxonomy) {
+                    continue;
+                }
+                $id = isset($term['id']) ? (int) $term['id'] : 0;
+                $name = wp_strip_all_tags((string) ($term['name'] ?? ''));
+                $slug = (string) ($term['slug'] ?? '');
+                if ($id < 1 || $name === '') {
+                    continue;
+                }
+                $out[$id] = [
+                    'id' => $id,
+                    'name' => $name,
+                    'slug' => $slug,
+                ];
+            }
+        }
+
+        return array_values($out);
     }
 
     private static function extractFeaturedImage(array $raw): string {

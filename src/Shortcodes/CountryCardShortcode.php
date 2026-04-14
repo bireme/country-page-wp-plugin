@@ -41,6 +41,7 @@ final class CountryCardShortcode {
             'cp_show_content' => !$restrict || $contentOnly,
             'cp_show_excerpt' => !$restrict,
             'cp_show_meta' => !$restrict,
+            'cp_display_mode' => $titleOnly ? 'title-only' : ($contentOnly ? 'content-only' : ($imageOnly ? 'image-only' : 'default')),
         ];
 
         $result = $this->fetchCountryCardHtml($slug, $displayVars, $restrict);
@@ -65,6 +66,7 @@ final class CountryCardShortcode {
             'cp_show_content' => true,
             'cp_show_excerpt' => true,
             'cp_show_meta' => true,
+            'cp_display_mode' => 'default',
         ];
         return $this->fetchCountryCardHtml($slug, $displayVars, false);
     }
@@ -100,7 +102,7 @@ final class CountryCardShortcode {
             $pageTitle = (string) ($country['title'] ?? $country['name'] ?? '');
 
             $mode = get_option('cp_template_mode_country', 'default');
-            if ($mode === 'custom' && !$restrict) {
+            if ($mode === 'custom') {
                 $html = TemplateSupport::load_custom('country', $templateVars);
                 if ($html !== null && $html !== '') {
                     $html = (string) apply_filters('cp_country_card_html', $html);
@@ -115,9 +117,10 @@ final class CountryCardShortcode {
             $html = (string) apply_filters('cp_country_card_html', $html);
             return ['success' => true, 'html' => $html, 'page_title' => $pageTitle];
         } catch (\Throwable $e) {
+            error_log('[Country Pages][render_country] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return [
                 'success' => false,
-                'message' => __('Erro ao exibir país: ', 'country-pages') . $e->getMessage(),
+                'message' => __('Não foi possível exibir este país no momento.', 'country-pages'),
             ];
         }
     }
@@ -152,9 +155,9 @@ final class CountryCardShortcode {
         if (!current_user_can('manage_options')) {
             return '';
         }
-        return '<div class="cp-shortcode-error" style="padding:1em;background:#f8d7da;border:1px solid #f5c6cb;border-radius:4px;color:#721c24;white-space:pre-wrap;word-break:break-all;">'
-            . '<strong>' . esc_html__('Country Pages:', 'country-pages') . '</strong> '
-            . nl2br(esc_html($message))
+        return '<div class="cp-shortcode-error" style="padding:1rem 1.1rem;background:#fff7e8;border:1px solid #f1d39a;border-radius:10px;color:#6b4e16;line-height:1.6;">'
+            . '<strong style="display:block;margin-bottom:0.25rem;">' . esc_html__('Country Pages', 'country-pages') . '</strong>'
+            . '<span>' . nl2br(esc_html($message)) . '</span>'
             . '</div>';
     }
 }

@@ -4,6 +4,7 @@ namespace CP\Shortcodes;
 use CP\API\Client;
 use CP\API\Normalizer;
 use CP\Support\Helpers;
+use CP\Support\Template as TemplateSupport;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -83,6 +84,14 @@ final class CountrySliderShortcode {
             'slider_visible'  => $visible,
             'slider_loop'     => $loop,
         ];
+
+        $mode = get_option('cp_template_mode_slider', 'default');
+        if ($mode === 'custom') {
+            $html = TemplateSupport::load_custom('slider', $templateVars);
+            if ($html !== null && $html !== '') {
+                return (string) apply_filters('cp_country_slider_html', $html, $templateVars);
+            }
+        }
 
         $html = Helpers::renderTemplate('country-slider.php', $templateVars);
         return (string) apply_filters('cp_country_slider_html', $html, $templateVars);

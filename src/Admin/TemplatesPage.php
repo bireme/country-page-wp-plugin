@@ -9,6 +9,7 @@ class TemplatesPage {
     const CAPABILITY = 'manage_options';
     const OPT_MODE_COUNTRY = 'cp_template_mode_country';
     const OPT_MODE_LIST    = 'cp_template_mode_list';
+    const OPT_MODE_SLIDER  = 'cp_template_mode_slider';
 
     public static function boot(): void {
         add_action('admin_menu', [self::class, 'menu']);
@@ -30,6 +31,7 @@ class TemplatesPage {
     public static function register_settings(): void {
         register_setting('cp_templates', self::OPT_MODE_COUNTRY);
         register_setting('cp_templates', self::OPT_MODE_LIST);
+        register_setting('cp_templates', self::OPT_MODE_SLIDER);
     }
 
     public static function cleanup_old_options(): void {
@@ -39,18 +41,13 @@ class TemplatesPage {
 
         delete_option('cp_template_code_country');
         delete_option('cp_template_code_list');
+        delete_option('cp_template_code_slider');
         update_option('cp_templates_cleaned', true);
     }
 
     private static function get_custom_template_path(string $type): string {
-        $plugin_root = trailingslashit(dirname(__DIR__, 1));
-        if ($type === 'country') {
-            return $plugin_root . 'Templates/Custom/custom-country.php';
-        }
-        if ($type === 'list') {
-            return $plugin_root . 'Templates/Custom/custom-list.php';
-        }
-        return '';
+        $candidates = Template::custom_template_candidates($type);
+        return $candidates[0] ?? '';
     }
 
     public static function render_page(): void {
@@ -63,11 +60,14 @@ class TemplatesPage {
 
         $modeCountry = get_option(self::OPT_MODE_COUNTRY, 'default');
         $modeList    = get_option(self::OPT_MODE_LIST, 'default');
+        $modeSlider  = get_option(self::OPT_MODE_SLIDER, 'default');
         $countryTemplatePath = self::get_custom_template_path('country');
         $listTemplatePath = self::get_custom_template_path('list');
+        $sliderTemplatePath = self::get_custom_template_path('slider');
         
         $countryTemplateExists = file_exists($countryTemplatePath);
         $listTemplateExists = file_exists($listTemplatePath);
+        $sliderTemplateExists = file_exists($sliderTemplatePath);
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Templates', 'country-pages'); ?></h1>
@@ -77,10 +77,11 @@ class TemplatesPage {
                 <h2><?php esc_html_e('Como usar templates customizados', 'country-pages'); ?></h2>
                 <p><?php esc_html_e('Para usar templates personalizados, você deve subir manualmente os arquivos na pasta correta do plugin:', 'country-pages'); ?></p>
                 <ul>
-                    <li><strong><?php esc_html_e('Para países individuais:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code></li>
-                    <li><strong><?php esc_html_e('Para lista de países:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code></li>
+                    <li><strong><?php esc_html_e('Para países individuais:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-country.php</code></li>
+                    <li><strong><?php esc_html_e('Para lista de países:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-list.php</code></li>
+                    <li><strong><?php esc_html_e('Para carrossel de países:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-slider.php</code></li>
                 </ul>
-                <p><?php esc_html_e('Após subir os arquivos, ative o modo "Custom" nas opções abaixo.', 'country-pages'); ?></p>
+                <p><?php esc_html_e('Após subir os arquivos, ative o modo "Custom" nas opções abaixo. Os arquivos legados custom-country.php, custom-list.php e custom-slider.php continuam sendo aceitos como fallback.', 'country-pages'); ?></p>
             </div>
 
             <form method="post">
@@ -98,7 +99,8 @@ class TemplatesPage {
                                 <option value="custom" <?php selected($modeCountry, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
                             </select>
                             <p class="description">
-                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code><br>
+                                <strong><?php esc_html_e('Arquivo preferencial:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-country.php</code><br>
+                                <strong><?php esc_html_e('Fallback legado:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-country.php</code><br>
                                 <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
                                 <?php if ($countryTemplateExists): ?>
                                     <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
@@ -119,9 +121,32 @@ class TemplatesPage {
                                 <option value="custom" <?php selected($modeList, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
                             </select>
                             <p class="description">
-                                <strong><?php esc_html_e('Arquivo:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code><br>
+                                <strong><?php esc_html_e('Arquivo preferencial:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-list.php</code><br>
+                                <strong><?php esc_html_e('Fallback legado:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-list.php</code><br>
                                 <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong> 
                                 <?php if ($listTemplateExists): ?>
+                                    <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
+                                <?php else: ?>
+                                    <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
+                                <?php endif; ?>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
+                            <label for="cp_template_mode_slider"><?php esc_html_e('Template de Carrossel de Países', 'country-pages'); ?></label>
+                        </th>
+                        <td>
+                            <select name="<?php echo esc_attr(self::OPT_MODE_SLIDER); ?>" id="cp_template_mode_slider">
+                                <option value="default" <?php selected($modeSlider, 'default'); ?>><?php esc_html_e('Padrão', 'country-pages'); ?></option>
+                                <option value="custom" <?php selected($modeSlider, 'custom'); ?>><?php esc_html_e('Customizado', 'country-pages'); ?></option>
+                            </select>
+                            <p class="description">
+                                <strong><?php esc_html_e('Arquivo preferencial:', 'country-pages'); ?></strong> <code>Templates/Custom/country-pages-custom-slider.php</code><br>
+                                <strong><?php esc_html_e('Fallback legado:', 'country-pages'); ?></strong> <code>Templates/Custom/custom-slider.php</code><br>
+                                <strong><?php esc_html_e('Status:', 'country-pages'); ?></strong>
+                                <?php if ($sliderTemplateExists): ?>
                                     <span style="color: green;">✓ <?php esc_html_e('Arquivo encontrado', 'country-pages'); ?></span>
                                 <?php else: ?>
                                     <span style="color: red;">✗ <?php esc_html_e('Arquivo não encontrado', 'country-pages'); ?></span>
@@ -143,6 +168,7 @@ class TemplatesPage {
 
         update_option(self::OPT_MODE_COUNTRY, (isset($_POST[self::OPT_MODE_COUNTRY]) && $_POST[self::OPT_MODE_COUNTRY] === 'custom') ? 'custom' : 'default');
         update_option(self::OPT_MODE_LIST, (isset($_POST[self::OPT_MODE_LIST]) && $_POST[self::OPT_MODE_LIST] === 'custom') ? 'custom' : 'default');
+        update_option(self::OPT_MODE_SLIDER, (isset($_POST[self::OPT_MODE_SLIDER]) && $_POST[self::OPT_MODE_SLIDER] === 'custom') ? 'custom' : 'default');
 
         add_settings_error('cp_templates', 'saved', __('Configurações de templates salvas com sucesso.', 'country-pages'), 'updated');
     }

@@ -4,6 +4,7 @@ namespace CP\Shortcodes;
 use CP\API\Client;
 use CP\API\Normalizer;
 use CP\Support\Helpers;
+use CP\Support\Logger;
 use CP\Support\Template as TemplateSupport;
 
 if (!defined('ABSPATH')) exit;
@@ -27,6 +28,9 @@ final class CountryCardShortcode {
 
         $slug = sanitize_title($atts['slug']);
         if (!$slug) {
+            Logger::warning('Shortcode country sem atributo slug obrigatorio.', [
+                'atts' => $atts,
+            ]);
             return $this->renderShortcodeError(__('Shortcode [country]: atributo slug é obrigatório.', 'country-pages'));
         }
 
@@ -117,7 +121,11 @@ final class CountryCardShortcode {
             $html = (string) apply_filters('cp_country_card_html', $html);
             return ['success' => true, 'html' => $html, 'page_title' => $pageTitle];
         } catch (\Throwable $e) {
-            error_log('[Country Pages][render_country] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Logger::error('Falha ao renderizar pais.', [
+                'slug' => $slug,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return [
                 'success' => false,
                 'message' => __('Não foi possível exibir este país no momento.', 'country-pages'),

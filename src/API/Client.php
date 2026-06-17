@@ -1,6 +1,8 @@
 <?php
 namespace CP\API;
 
+use CP\Support\Logger;
+
 if (!defined('ABSPATH')) exit;
 
 /**
@@ -25,6 +27,9 @@ final class Client {
 
         if (!$this->endpoint) {
             $this->lastError = __('Endpoint da API não configurado. Configure em Ajustes → Country Pages.', 'country-pages');
+            Logger::warning('Endpoint da API nao configurado ao buscar pais por slug.', [
+                'slug' => $slug,
+            ]);
             return null;
         }
 
@@ -32,6 +37,10 @@ final class Client {
             ['slug' => $slug, 'per_page' => 1, '_embed' => 1],
             $this->endpoint
         );
+        Logger::info('Chamada iniciada para buscar pais por slug.', [
+            'url' => $url,
+            'slug' => $slug,
+        ]);
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
 
         if (is_wp_error($res)) {
@@ -62,6 +71,17 @@ final class Client {
         }
 
         $body = json_decode($bodyRaw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->lastError = __('A API retornou uma resposta inválida.', 'country-pages');
+            $this->logRequestError(
+                'invalid_json',
+                __('Resposta JSON inválida da API: ', 'country-pages') . json_last_error_msg(),
+                $code,
+                $bodyRaw,
+                $url
+            );
+            return null;
+        }
         if (!is_array($body) || empty($body[0])) {
             $this->lastError = __('Nenhum país foi encontrado para este endereço.', 'country-pages');
             $this->logRequestError(
@@ -73,6 +93,12 @@ final class Client {
             );
             return null;
         }
+
+        Logger::info('Chamada concluida com sucesso para buscar pais por slug.', [
+            'url' => $url,
+            'slug' => $slug,
+            'http_code' => $code,
+        ]);
 
         return $body[0];
     }
@@ -92,20 +118,21 @@ final class Client {
     }
 
     private function logRequestError(string $context, string $message, ?int $code, ?string $body, string $url): void {
-        error_log(
-            sprintf(
-                '[Country Pages][%s] %s%s',
-                $context,
-                wp_strip_all_tags($message),
-                $this->formatRawResponse($code, $body, $url)
-            )
-        );
+        $level = $context === 'country_not_found' ? 'warning' : 'error';
+        Logger::log($level, sprintf('[%s] %s', $context, wp_strip_all_tags($message)), [
+            'url' => $url,
+            'http_code' => $code !== null ? $code : '',
+            'body' => $this->formatRawResponse($code, $body, $url),
+        ]);
     }
 
     /** @return array{items: array<int, array<string, mixed>>, total: int, total_pages: int} */
     public function listCountries(array $args = []): array {
         $empty = ['items' => [], 'total' => 0, 'total_pages' => 0];
         if (!$this->endpoint) {
+            Logger::warning('Endpoint da API nao configurado ao listar paises.', [
+                'args' => $args,
+            ]);
             return $empty;
         }
 
@@ -130,16 +157,48 @@ final class Client {
         );
         $url   = add_query_arg($query, $this->endpoint);
 
+        Logger::info('Chamada iniciada para listar paises.', [
+            'url' => $url,
+            'query' => $query,
+        ]);
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
         if (is_wp_error($res)) {
+            Logger::error('Erro na chamada para listar paises.', [
+                'url' => $url,
+                'error' => $res->get_error_message(),
+            ]);
             return $empty;
         }
-        if (wp_remote_retrieve_response_code($res) !== 200) {
+        $code = wp_remote_retrieve_response_code($res);
+        $bodyRaw = wp_remote_retrieve_body($res);
+        if ($code !== 200) {
+            Logger::error('Resposta inesperada ao listar paises.', [
+                'url' => $url,
+                'http_code' => $code,
+                'body' => $bodyRaw,
+            ]);
             return $empty;
         }
 
-        $body = json_decode(wp_remote_retrieve_body($res), true);
-        $items = is_array($body) ? $body : [];
+        $body = json_decode($bodyRaw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Logger::error('Resposta JSON invalida ao listar paises.', [
+                'url' => $url,
+                'http_code' => $code,
+                'json_error' => json_last_error_msg(),
+                'body' => $bodyRaw,
+            ]);
+            return $empty;
+        }
+        if (!is_array($body)) {
+            Logger::warning('Resposta da API ao listar paises nao e uma lista.', [
+                'url' => $url,
+                'http_code' => $code,
+                'body' => $bodyRaw,
+            ]);
+            return $empty;
+        }
+        $items = $body;
 
         $total = (int) wp_remote_retrieve_header($res, 'x-wp-total');
         $totalPages = (int) wp_remote_retrieve_header($res, 'x-wp-totalpages');
@@ -154,6 +213,14 @@ final class Client {
         if ($totalPages < 1) {
             $totalPages = 1;
         }
+
+        Logger::info('Chamada concluida com sucesso para listar paises.', [
+            'url' => $url,
+            'http_code' => $code,
+            'items' => count($items),
+            'total' => $total,
+            'total_pages' => $totalPages,
+        ]);
 
         return [
             'items'       => $items,
@@ -179,6 +246,10 @@ final class Client {
     public function getRestCollection(string $route, array $query = []): array {
         $base = $this->getRestBaseUrl();
         if ($base === '') {
+            Logger::warning('URL base REST nao encontrada para consultar colecao.', [
+                'route' => $route,
+                'endpoint' => $this->endpoint,
+            ]);
             return [];
         }
         $route = ltrim($route, '/');
@@ -191,12 +262,59 @@ final class Client {
         );
         $url = add_query_arg($query, $url);
 
+        Logger::info('Chamada iniciada para colecao REST.', [
+            'url' => $url,
+            'route' => $route,
+            'query' => $query,
+        ]);
         $res = wp_remote_get($url, ['timeout' => 12, 'sslverify' => false]);
-        if (is_wp_error($res) || wp_remote_retrieve_response_code($res) !== 200) {
+        if (is_wp_error($res)) {
+            Logger::error('Erro na chamada para colecao REST.', [
+                'url' => $url,
+                'route' => $route,
+                'error' => $res->get_error_message(),
+            ]);
             return [];
         }
-        $body = json_decode(wp_remote_retrieve_body($res), true);
-        return is_array($body) ? $body : [];
+        $code = wp_remote_retrieve_response_code($res);
+        $bodyRaw = wp_remote_retrieve_body($res);
+        if ($code !== 200) {
+            Logger::error('Resposta inesperada ao consultar colecao REST.', [
+                'url' => $url,
+                'route' => $route,
+                'http_code' => $code,
+                'body' => $bodyRaw,
+            ]);
+            return [];
+        }
+        $body = json_decode($bodyRaw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Logger::error('Resposta JSON invalida ao consultar colecao REST.', [
+                'url' => $url,
+                'route' => $route,
+                'http_code' => $code,
+                'json_error' => json_last_error_msg(),
+                'body' => $bodyRaw,
+            ]);
+            return [];
+        }
+        if (!is_array($body)) {
+            Logger::warning('Resposta da colecao REST nao e uma lista.', [
+                'url' => $url,
+                'route' => $route,
+                'http_code' => $code,
+                'body' => $bodyRaw,
+            ]);
+            return [];
+        }
+        $items = $body;
+        Logger::info('Chamada concluida com sucesso para colecao REST.', [
+            'url' => $url,
+            'route' => $route,
+            'http_code' => $code,
+            'items' => count($items),
+        ]);
+        return $items;
     }
 
     /** @return array<int, array{id: int, name: string, slug: string}> */
